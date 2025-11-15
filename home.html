@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practicá Tiempos Verbales (Argentina)</title>
+    <!-- Incluir Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Configuración de la fuente y colores de Tailwind */
+        :root {
+            --color-primary: #10b981; /* Emerald 500 */
+            --color-secondary: #06b6d4; /* Cyan 600 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* Fondo claro */
+        }
+        /* Estilos específicos para feedback */
+        .feedback-correct {
+            background-color: #d1fae5; /* Verde claro */
+            color: #065f46; /* Verde oscuro */
+            border-left: 5px solid var(--color-primary);
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2; /* Rojo claro */
+            color: #991b1b; /* Rojo oscuro */
+            border-left: 5px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Tarjeta Principal de la Aplicación -->
+    <div id="app-container" class="bg-white shadow-2xl rounded-xl w-full max-w-lg p-6 md:p-10 border-t-8 border-cyan-600 transition-all duration-300">
+        
+        <!-- Encabezado y Marcador -->
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-gray-800">
+                🇦🇷 Práctica Verbal
+            </h1>
+            <div class="text-xl font-semibold text-gray-600">
+                Puntaje: <span id="score" class="text-cyan-600">0</span>
+            </div>
+        </header>
+
+        <!-- Área de la Pregunta -->
+        <div id="question-area" class="space-y-6">
+            <!-- Título del tiempo verbal requerido -->
+            <div class="text-lg font-medium text-gray-700 p-2 bg-gray-100 rounded-lg">
+                Tiempo Requerido: <span id="required-tense" class="font-bold text-emerald-600"></span>
+            </div>
+
+            <!-- Detalle Gramatical -->
+            <div class="flex flex-col sm:flex-row justify-between gap-2 p-3 bg-blue-50 border-l-4 border-cyan-400 rounded-lg text-base text-gray-600">
+                <span>
+                    **Persona:** <span id="required-person" class="font-extrabold text-cyan-700"></span>
+                </span>
+                <span>
+                    **Número:** <span id="required-number" class="font-extrabold text-cyan-700"></span>
+                </span>
+            </div>
+
+            <!-- Frase incompleta -->
+            <p id="sentence-fragment" class="text-2xl md:text-3xl font-light text-gray-900 leading-relaxed">
+                <!-- Fragmento de la oración irá aquí -->
+            </p>
+
+            <!-- Campo de Input -->
+            <input 
+                type="text" 
+                id="answer-input" 
+                placeholder="Escribí la conjugación acá..." 
+                class="w-full p-4 border-2 border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition duration-150"
+                autocomplete="off"
+            >
+
+            <!-- Botón de Acción -->
+            <button 
+                id="check-button" 
+                onclick="checkAnswer()"
+                class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200 disabled:opacity-50"
+            >
+                Comprobar
+            </button>
+        </div>
+
+        <!-- Área de Feedback y Siguiente Pregunta -->
+        <div id="feedback-area" class="mt-6 hidden">
+            <div id="feedback-message" class="p-4 rounded-lg text-center font-semibold text-lg mb-4">
+                <!-- Mensaje de feedback va aquí -->
+            </div>
+            <button 
+                id="next-button" 
+                onclick="nextQuestion()"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200"
+            >
+                Siguiente Pregunta
+            </button>
+        </div>
+        
+        <!-- Mensaje de Fin de Juego -->
+        <div id="game-over-message" class="hidden text-center p-8 bg-blue-50 rounded-lg mt-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Terminaste la práctica!</h2>
+            
+            <!-- Contenedor de felicitación por puntaje perfecto (NUEVO) -->
+            <div id="perfect-score-trophy" class="hidden p-4 mb-4 bg-yellow-100 border-2 border-yellow-400 rounded-xl">
+                <p class="text-6xl mb-2 animate-bounce">🏆</p>
+                <h3 class="text-xl font-extrabold text-yellow-700">¡Puntaje Perfecto! ¡Felicitaciones!</h3>
+            </div>
+            
+            <p class="text-lg text-gray-600">Tu puntaje final es: <span id="final-score" class="font-extrabold text-cyan-600 text-3xl"></span></p>
+            <button 
+                onclick="restartGame()"
+                class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+            >
+                Empezar de Nuevo
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Simulación de variables globales del entorno (no se usan para esta app simple, pero necesarias en el entorno)
+        const __app_id = 'verb-practice-app';
+        const __firebase_config = '{}';
+        const __initial_auth_token = undefined;
+        
+        /**
+         * Arreglo de preguntas. Ahora incluye 'person' y 'grammatical_number'.
+         * Formato: { verb, subject, person, grammatical_number, tense, fragment, answer }
+         */
+        const questions = [
+            // Pretérito Perfecto Simple (PPS)
+            { verb: "hablar", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: "Pretérito Perfecto Simple", fragment: "Ayer, vos (______) con tu mamá por teléfono.", answer: "hablaste" },
+            { verb: "comer", subject: "él", person: "3ª Persona", grammatical_number: "Singular", tense: "Pretérito Perfecto Simple", fragment: "Mi perro (______) toda su comida rápidamente.", answer: "comió" },
+            { verb: "vivir", subject: "nosotros", person: "1ª Persona", grammatical_number: "Plural", tense: "Pretérito Perfecto Simple", fragment: "El año pasado, nosotros (______) en Bariloche por un mes.", answer: "vivimos" },
+            { verb: "ser", subject: "ustedes", person: "3ª Persona", grammatical_number: "Plural", tense: "Pretérito Perfecto Simple", fragment: "Ustedes (______) muy amables con los turistas.", answer: "fueron" },
+            // Pretérito Imperfecto (PI)
+            { verb: "jugar", subject: "yo", person: "1ª Persona", grammatical_number: "Singular", tense: "Pretérito Imperfecto", fragment: "De chico, yo (______) al fútbol en la calle.", answer: "jugaba" },
+            { verb: "tener", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: "Pretérito Imperfecto", fragment: "Cuando te conocí, vos (______) mucho miedo.", answer: "tenías" },
+            { verb: "ir", subject: "ellos", person: "3ª Persona", grammatical_number: "Plural", tense: "Pretérito Imperfecto", fragment: "Todos los veranos, ellos (______) a la costa.", answer: "iban" },
+            { verb: "estar", subject: "ella", person: "3ª Persona", grammatical_number: "Singular", tense: "Pretérito Imperfecto", fragment: "Ella (______) siempre muy contenta.", answer: "estaba" },
+            // Pretérito Pluscuamperfecto (PPP)
+            { verb: "viajar", subject: "nosotros", person: "1ª Persona", grammatical_number: "Plural", tense: "Pretérito Pluscuamperfecto", fragment: "Ya (______) mucho antes de ir a Europa.", answer: "habíamos viajado" },
+            { verb: "escribir", subject: "yo", person: "1ª Persona", grammatical_number: "Singular", tense: "Pretérito Pluscuamperfecto", fragment: "Cuando revisaron, yo ya (______) la carta.", answer: "había escrito" },
+            { verb: "decir", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: "Pretérito Pluscuamperfecto", fragment: "Ella se enojó porque (______) la verdad sin querer.", answer: "habías dicho" },
+            { verb: "hacer", subject: "ellos", person: "3ª Persona", grammatical_number: "Plural", tense: "Pretérito Pluscuamperfecto", fragment: "Ellos (______) el trabajo antes de la fecha límite.", answer: "habían hecho" },
+            // Más ejemplos (Mezclados)
+            { verb: "empezar", subject: "la clase", person: "3ª Persona", grammatical_number: "Singular", tense: "Pretérito Imperfecto", fragment: "La clase (______) a las ocho de la mañana.", answer: "empezaba" },
+            { verb: "ver", subject: "ustedes", person: "3ª Persona", grammatical_number: "Plural", tense: "Pretérito Perfecto Simple", fragment: "Ayer, ustedes (______) una película interesante.", answer: "vieron" },
+            { verb: "terminar", subject: "el partido", person: "3ª Persona", grammatical_number: "Singular", tense: "Pretérito Pluscuamperfecto", fragment: "El público entró cuando el partido ya (______) .", answer: "había terminado" },
+            { verb: "bailar", subject: "nosotros", person: "1ª Persona", grammatical_number: "Plural", tense: "Pretérito Perfecto Simple", fragment: "Anoche, nosotros (______) hasta tarde en el casamiento.", answer: "bailamos" },
+            { verb: "poder", subject: "yo", person: "1ª Persona", grammatical_number: "Singular", tense: "Pretérito Imperfecto", fragment: "Yo no (______) encontrar mis llaves.", answer: "podía" },
+            { verb: "olvidar", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: "Pretérito Pluscuamperfecto", fragment: "Me di cuenta que (______) mi billetera en el colectivo.", answer: "habías olvidado" },
+            { verb: "cantar", subject: "ella", person: "3ª Persona", grammatical_number: "Singular", tense: "Pretérito Perfecto Simple", fragment: "Ella (______) una hermosa canción en el acto.", answer: "cantó" },
+            { verb: "ser", subject: "la ciudad", person: "3ª Persona", grammatical_number: "Singular", tense: "Pretérito Imperfecto", fragment: "Cuando éramos chicos, la ciudad (______) más tranquila.", answer: "era" },
+        ];
+
+        let currentQuestions = []; // Copia para el juego actual
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // Referencias a elementos del DOM
+        const scoreElement = document.getElementById('score');
+        const requiredTenseElement = document.getElementById('required-tense');
+        // NUEVAS REFERENCIAS DOM
+        const requiredPersonElement = document.getElementById('required-person');
+        const requiredNumberElement = document.getElementById('required-number');
+
+        const sentenceFragmentElement = document.getElementById('sentence-fragment');
+        const answerInput = document.getElementById('answer-input');
+        const checkButton = document.getElementById('check-button');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const questionArea = document.getElementById('question-area');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const finalScoreElement = document.getElementById('final-score');
+        const perfectScoreTrophy = document.getElementById('perfect-score-trophy'); // NUEVA REFERENCIA
+
+        /**
+         * Inicializa o reinicia el juego.
+         */
+        function initializeGame() {
+            // Mezcla las preguntas para que el orden sea aleatorio
+            currentQuestions = [...questions].sort(() => Math.random() - 0.5);
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScore();
+            
+            gameOverMessage.classList.add('hidden');
+            feedbackArea.classList.add('hidden');
+            questionArea.classList.remove('hidden');
+            perfectScoreTrophy.classList.add('hidden'); // Asegura que esté oculto al inicio
+
+            displayQuestion();
+        }
+
+        /**
+         * Muestra la pregunta actual en la interfaz.
+         */
+        function displayQuestion() {
+            if (currentQuestionIndex >= currentQuestions.length) {
+                // El juego ha terminado
+                endGame();
+                return;
+            }
+
+            const current = currentQuestions[currentQuestionIndex];
+            
+            // Resetea el estado del input y feedback
+            answerInput.value = '';
+            answerInput.disabled = false;
+            checkButton.disabled = false;
+            feedbackArea.classList.add('hidden');
+            
+            // Muestra la pregunta y los nuevos detalles gramaticales
+            requiredTenseElement.textContent = current.tense;
+            requiredPersonElement.textContent = current.person;
+            requiredNumberElement.textContent = current.grammatical_number;
+            
+            // Destaca el verbo para conjugar
+            const fragmentHtml = current.fragment.replace(
+                "______", 
+                `<span class="text-red-500 font-extrabold text-4xl mx-1">( ${current.verb} )</span>`
+            );
+            sentenceFragmentElement.innerHTML = fragmentHtml;
+
+            // Enfoca el campo de entrada
+            answerInput.focus();
+        }
+
+        /**
+         * Comprueba la respuesta del usuario.
+         */
+        function checkAnswer() {
+            const current = currentQuestions[currentQuestionIndex];
+            // Normalize la respuesta a minúsculas y sin espacios iniciales/finales
+            const userAnswer = answerInput.value.trim().toLowerCase();
+            const correctAnswer = current.answer.trim().toLowerCase();
+            
+            // Deshabilita el input y el botón de comprobar
+            answerInput.disabled = true;
+            checkButton.disabled = true;
+
+            // Muestra el área de feedback
+            feedbackArea.classList.remove('hidden');
+            feedbackMessage.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            // Formato de detalle gramatical para el feedback
+            const grammarDetail = `${current.person} (${current.subject}), ${current.grammatical_number} del verbo "${current.verb}".`;
+            
+            if (userAnswer === correctAnswer) {
+                // Respuesta Correcta
+                score++;
+                feedbackMessage.classList.add('feedback-correct');
+                feedbackMessage.innerHTML = `¡Correcto! ✔️<br/> La conjugación es **${current.answer}**.<br/> *Detalle: ${grammarDetail}*`;
+            } else {
+                // Respuesta Incorrecta
+                feedbackMessage.classList.add('feedback-incorrect');
+                feedbackMessage.innerHTML = `Incorrecto. ❌<br/> Intentaste: *${userAnswer}*.<br/> La conjugación correcta era: **${current.answer}**.<br/> *Detalle: ${grammarDetail}*`;
+            }
+
+            updateScore();
+        }
+
+        /**
+         * Pasa a la siguiente pregunta.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
+        /**
+         * Actualiza el puntaje en la interfaz.
+         */
+        function updateScore() {
+            scoreElement.textContent = score;
+        }
+
+        /**
+         * Finaliza el juego y muestra el puntaje final.
+         */
+        function endGame() {
+            finalScoreElement.textContent = `${score} de ${currentQuestions.length}`;
+            questionArea.classList.add('hidden');
+            feedbackArea.classList.add('hidden');
+            gameOverMessage.classList.remove('hidden');
+
+            // Lógica de felicitación por puntaje perfecto
+            if (score === currentQuestions.length) {
+                perfectScoreTrophy.classList.remove('hidden');
+            } else {
+                perfectScoreTrophy.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Reinicia el juego desde el principio.
+         */
+        function restartGame() {
+            initializeGame();
+        }
+
+        // Manejo de la tecla Enter para comprobar la respuesta
+        answerInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !checkButton.disabled) {
+                checkAnswer();
+            } else if (e.key === 'Enter' && !feedbackArea.classList.contains('hidden')) {
+                // Si ya comprobó, Enter pasa a la siguiente pregunta
+                nextQuestion();
+            }
+        });
+
+        // Inicializa el juego al cargar la página
+        window.onload = initializeGame;
+
+    </script>
+</body>
+</html>
