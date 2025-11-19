@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practicá Gramática y Tipos de Texto</title>
+    <!-- Incluir Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Configuración de la fuente y colores de Tailwind */
+        :root {
+            --color-primary: #10b981; /* Emerald 500 */
+            --color-secondary: #06b6d4; /* Cyan 600 */
+            --color-tertiary: #f97316; /* Orange 500 para el nuevo modo */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* Fondo claro */
+        }
+        /* Estilos específicos para feedback */
+        .feedback-correct {
+            background-color: #d1fae5; /* Verde claro */
+            color: #065f46; /* Verde oscuro */
+            border-left: 5px solid var(--color-primary);
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2; /* Rojo claro */
+            color: #991b1b; /* Rojo oscuro */
+            border-left: 5px solid #ef4444;
+        }
+        /* Estilos para el modal */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        /* Estilo para botones de opción múltiple (común a Textos y Gramática) */
+        .option-button {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-align: left;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .option-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .option-button.bg-gray-200:hover {
+            background-color: #e5e7eb;
+        }
+        .selected-answer {
+            border: 3px solid var(--color-secondary);
+        }
+        /* Estilo específico para simular la Historieta (Comic) */
+        .comic-panel {
+            font-family: monospace;
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .dialogue { color: #000; font-weight: bold; }
+        .thought { color: #888; font-style: italic; }
+        .sfx { color: #f97316; font-size: 1.2em; font-weight: bolder; }
+        
+        /* Estilo para el texto de párrafos con salto de línea visible */
+        .paragraph-text {
+            white-space: pre-wrap; /* Mantiene saltos de línea y espacios */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Tarjeta Principal de la Aplicación -->
+    <div id="app-container" class="bg-white shadow-2xl rounded-xl w-full max-w-lg p-6 md:p-10 border-t-8 border-cyan-600 transition-all duration-300">
+        
+        <!-- Encabezado y Marcador (Visible en todas las pantallas de juego) -->
+        <header id="game-header" class="mb-8 flex justify-between items-center hidden">
+            <h1 class="text-2xl font-extrabold text-gray-800" id="game-title">
+                <!-- Título del modo de juego actual -->
+            </h1>
+            <div class="text-xl font-semibold text-gray-600">
+                Puntaje: <span id="score" class="text-cyan-600">0</span>
+            </div>
+        </header>
+
+        <!-- PANTALLA PRINCIPAL (Selección de Modo de Juego) -->
+        <div id="main-menu" class="text-center">
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-6">¡Bienvenido al Aula de Práctica!</h1>
+            <p class="text-gray-600 mb-8">Elegí qué querés practicar hoy:</p>
+            
+            <div class="space-y-4">
+                <button onclick="startGameMode('tenses')" class="w-full text-left p-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg text-lg shadow-md transition duration-200">
+                    1. Tiempos Verbales (16 Preguntas) 📝
+                </button>
+                <button onclick="startGameMode('texts')" class="w-full text-left p-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-lg shadow-md transition duration-200">
+                    2. Tipos de Texto (10 Preguntas) 📚
+                </button>
+                <button onclick="initializeGrammarGame()" class="w-full text-left p-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-lg shadow-md transition duration-200">
+                    3. Oración, Párrafo y Puntuación (10 Preguntas) 📐
+                </button>
+            </div>
+        </div>
+        
+        <!-- PANTALLA 2: SELECCIÓN DE TIEMPOS VERBALES -->
+        <div id="tense-select-screen" class="hidden">
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-6">Elegí tu Práctica Verbal 🧠</h1>
+            <p class="text-gray-600 mb-8">¿Qué tiempos verbales querés estudiar hoy?</p>
+            
+            <div class="space-y-4">
+                <button onclick="startTenseGame('all')" class="w-full text-left p-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg text-lg shadow-md transition duration-200">
+                    Todos los Tiempos (Pretéritos + Condicional)
+                </button>
+                <button onclick="startTenseGame('preterites')" class="w-full text-left p-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-lg shadow-md transition duration-200">
+                    Solo Pretéritos (Simple, Imperfecto, Pluscuamperfecto)
+                </button>
+                <button onclick="startTenseGame('conditional')" class="w-full text-left p-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-lg shadow-md transition duration-200">
+                    Solo Condicional Simple
+                </button>
+            </div>
+            <button 
+                onclick="showMainMenu()"
+                class="mt-6 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 rounded-lg"
+            >
+                Volver al Menú Principal
+            </button>
+        </div>
+
+        <!-- PANTALLA 3: JUEGO DE TIEMPOS VERBALES -->
+        <div id="tenses-game-screen" class="hidden">
+            <!-- Contador de Preguntas -->
+            <div class="text-lg font-bold text-gray-700 text-right mb-4">
+                <span id="tense-question-counter"></span>
+            </div>
+            <!-- Área de la Pregunta Verbal -->
+            <div id="tense-question-area" class="space-y-6">
+                <!-- Título del tiempo verbal requerido -->
+                <div class="text-lg font-medium text-gray-700 p-2 bg-gray-100 rounded-lg">
+                    Tiempo Requerido: <span id="required-tense" class="font-bold text-emerald-600"></span>
+                </div>
+
+                <!-- Detalle Gramatical -->
+                <div class="flex flex-col sm:flex-row justify-between gap-2 p-3 bg-blue-50 border-l-4 border-cyan-400 rounded-lg text-base text-gray-600">
+                    <span>
+                        **Persona:** <span id="required-person" class="font-extrabold text-cyan-700"></span>
+                    </span>
+                    <span>
+                        **Número:** <span id="required-number" class="font-extrabold text-cyan-700"></span>
+                    </span>
+                </div>
+
+                <!-- Frase incompleta -->
+                <p id="sentence-fragment" class="text-2xl md:text-3xl font-light text-gray-900 leading-relaxed">
+                    <!-- Fragmento de la oración irá aquí -->
+                </p>
+
+                <!-- Campo de Input -->
+                <input 
+                    type="text" 
+                    id="tense-answer-input" 
+                    placeholder="Escribí la conjugación acá..." 
+                    class="w-full p-4 border-2 border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition duration-150"
+                    autocomplete="off"
+                >
+
+                <!-- Botones de Acción y Pista -->
+                <div class="flex space-x-4">
+                    <button 
+                        id="hint-button" 
+                        onclick="showHint()"
+                        class="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg text-lg shadow-md transition duration-200"
+                    >
+                        Pista 💡
+                    </button>
+                    <button 
+                        id="tense-check-button" 
+                        onclick="checkTenseAnswer()"
+                        class="w-2/3 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200 disabled:opacity-50"
+                    >
+                        Comprobar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Área de Feedback y Siguiente Pregunta Verbal -->
+            <div id="tense-feedback-area" class="mt-6 hidden">
+                <div id="tense-feedback-message" class="p-4 rounded-lg text-center font-semibold text-lg mb-4">
+                    <!-- Mensaje de feedback va aquí -->
+                </div>
+                <button 
+                    id="tense-next-button" 
+                    onclick="nextTenseQuestion()"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200"
+                >
+                    Siguiente Pregunta
+                </button>
+            </div>
+        </div>
+
+        <!-- PANTALLA 4: JUEGO DE TIPOS DE TEXTO -->
+        <div id="texts-game-screen" class="hidden">
+             <!-- Contador de Preguntas -->
+            <div class="text-lg font-bold text-gray-700 text-right mb-4">
+                <span id="text-question-counter"></span>
+            </div>
+            <!-- Área de la Pregunta de Texto -->
+            <div id="text-question-area" class="space-y-6">
+                <!-- Fragmento de Texto -->
+                <div class="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+                    <p class="text-sm font-semibold text-yellow-700 mb-2">Comienzo del Texto:</p>
+                    <div id="text-fragment-wrapper" class="text-xl italic text-gray-800 leading-relaxed max-h-40 overflow-y-auto">
+                        <p id="text-fragment"><!-- Fragmento de texto irá aquí --></p>
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-700 mt-4">¿Qué tipo de texto es este?</h3>
+
+                <!-- Botones de Opciones (Múltiple Opción) -->
+                <div id="text-options-container" class="space-y-3">
+                    <!-- Los botones de opciones se generan con JS aquí -->
+                </div>
+
+                <!-- Botones de Acción (Comprobar) -->
+                <button 
+                    id="text-check-button" 
+                    onclick="checkTextAnswer()"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200 disabled:opacity-50"
+                    disabled
+                >
+                    Comprobar Tipo de Texto
+                </button>
+            </div>
+
+            <!-- Área de Feedback y Siguiente Pregunta de Texto -->
+            <div id="text-feedback-area" class="mt-6 hidden">
+                <div id="text-feedback-message" class="p-4 rounded-lg text-center font-semibold text-lg mb-4">
+                    <!-- Mensaje de feedback va aquí -->
+                </div>
+                <button 
+                    id="text-next-button" 
+                    onclick="nextTextQuestion()"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200"
+                >
+                    Siguiente Pregunta
+                </button>
+            </div>
+        </div>
+
+        <!-- PANTALLA 5: JUEGO DE GRAMÁTICA Y PUNTUACIÓN -->
+        <div id="grammar-game-screen" class="hidden">
+            <!-- Contador de Preguntas -->
+            <div class="text-lg font-bold text-gray-700 text-right mb-4">
+                <span id="grammar-question-counter"></span>
+            </div>
+            <!-- Área de la Pregunta de Gramática -->
+            <div id="grammar-question-area" class="space-y-6">
+                <!-- Concepto Clave -->
+                <div class="text-lg font-medium text-gray-700 p-2 bg-gray-100 rounded-lg">
+                    Concepto: <span id="required-concept" class="font-bold text-orange-600"></span>
+                </div>
+
+                <!-- Pregunta o Frase a Analizar -->
+                <div class="p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg overflow-y-auto max-h-64">
+                    <p id="grammar-question" class="text-xl font-medium text-gray-800 leading-relaxed paragraph-text">
+                        <!-- La pregunta o el texto de ejemplo van aquí -->
+                    </p>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-700 mt-4">Elegí la opción correcta:</h3>
+
+                <!-- Botones de Opciones (Múltiple Opción) -->
+                <div id="grammar-options-container" class="space-y-3">
+                    <!-- Los botones de opciones se generan con JS aquí -->
+                </div>
+
+                <!-- Botones de Acción (Comprobar) -->
+                <button 
+                    id="grammar-check-button" 
+                    onclick="checkGrammarAnswer()"
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200 disabled:opacity-50"
+                    disabled
+                >
+                    Comprobar
+                </button>
+            </div>
+
+            <!-- Área de Feedback y Siguiente Pregunta de Gramática -->
+            <div id="grammar-feedback-area" class="mt-6 hidden">
+                <div id="grammar-feedback-message" class="p-4 rounded-lg text-center font-semibold text-lg mb-4">
+                    <!-- Mensaje de feedback va aquí -->
+                </div>
+                <button 
+                    id="grammar-next-button" 
+                    onclick="nextGrammarQuestion()"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-xl shadow-md transition duration-200"
+                >
+                    Siguiente Pregunta
+                </button>
+            </div>
+        </div>
+
+        <!-- Mensaje de Fin de Juego (Común para todos los modos) -->
+        <div id="game-over-message" class="hidden text-center p-8 bg-blue-50 rounded-lg mt-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Terminaste la práctica!</h2>
+            
+            <!-- Contenedor de felicitación por puntaje perfecto -->
+            <div id="perfect-score-trophy" class="hidden p-4 mb-4 bg-yellow-100 border-2 border-yellow-400 rounded-xl">
+                <p class="text-6xl mb-2">🏆</p>
+                <h3 class="text-xl font-extrabold text-yellow-700">¡Puntaje Perfecto! ¡Felicitaciones!</h3>
+            </div>
+            
+            <p class="text-lg text-gray-600">Tu puntaje final es: <span id="final-score" class="font-extrabold text-cyan-600 text-3xl"></span></p>
+            <button 
+                onclick="showMainMenu()"
+                class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+            >
+                Volver al Menú Principal
+            </button>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE PISTA (Solo para Tiempos Verbales) -->
+    <div id="hint-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 transform transition-all duration-300">
+            <h3 id="hint-title" class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 text-emerald-600"></h3>
+            <p id="hint-explanation" class="text-gray-700 mb-4"></p>
+            <div class="p-3 bg-gray-100 rounded-lg border-l-4 border-cyan-500">
+                <p class="font-semibold text-gray-800">Ejemplo:</p>
+                <p id="hint-example" class="font-mono text-sm text-gray-600"></p>
+            </div>
+            <button 
+                onclick="closeHintModal()"
+                class="mt-6 w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 rounded-lg"
+            >
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        
+        // --- CONSTANTES DE JUEGO ---
+        const TENSE_GAME_LIMIT = 16;
+        const TEXT_GAME_LIMIT = 10;
+        const GRAMMAR_GAME_LIMIT = 12; // Aumentado para incluir las nuevas
+        
+        let currentQuestions = []; 
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedTenses = [];
+        let currentGameMode = ''; // 'tenses', 'texts' o 'grammar'
+
+        // Referencias a elementos del DOM
+        const scoreElement = document.getElementById('score');
+        const gameTitleElement = document.getElementById('game-title');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const finalScoreElement = document.getElementById('final-score');
+        const perfectScoreTrophy = document.getElementById('perfect-score-trophy');
+
+        const mainMenu = document.getElementById('main-menu');
+        const tenseSelectScreen = document.getElementById('tense-select-screen');
+        const tensesGameScreen = document.getElementById('tenses-game-screen');
+        const textsGameScreen = document.getElementById('texts-game-screen');
+        const grammarGameScreen = document.getElementById('grammar-game-screen'); 
+        const gameHeader = document.getElementById('game-header');
+
+        // Referencias para JUEGO DE TIEMPOS VERBALES
+        const requiredTenseElement = document.getElementById('required-tense');
+        const requiredPersonElement = document.getElementById('required-person');
+        const requiredNumberElement = document.getElementById('required-number');
+        const sentenceFragmentElement = document.getElementById('sentence-fragment');
+        const tenseAnswerInput = document.getElementById('tense-answer-input');
+        const tenseCheckButton = document.getElementById('tense-check-button');
+        const tenseFeedbackArea = document.getElementById('tense-feedback-area');
+        const tenseFeedbackMessage = document.getElementById('tense-feedback-message');
+        const hintModal = document.getElementById('hint-modal');
+        const tenseQuestionCounter = document.getElementById('tense-question-counter');
+        const hintTitle = document.getElementById('hint-title');
+        const hintExplanation = document.getElementById('hint-explanation');
+        const hintExample = document.getElementById('hint-example');
+        
+        // Referencias para JUEGO DE TIPOS DE TEXTO
+        const textFragmentWrapper = document.getElementById('text-fragment-wrapper');
+        const textFragmentElement = document.getElementById('text-fragment');
+        const textOptionsContainer = document.getElementById('text-options-container');
+        const textCheckButton = document.getElementById('text-check-button');
+        const textFeedbackArea = document.getElementById('text-feedback-area');
+        const textFeedbackMessage = document.getElementById('text-feedback-message');
+        const textQuestionCounter = document.getElementById('text-question-counter');
+        let selectedTextAnswer = null;
+
+        // Referencias para JUEGO DE GRAMÁTICA 
+        const requiredConceptElement = document.getElementById('required-concept');
+        const grammarQuestionElement = document.getElementById('grammar-question');
+        const grammarOptionsContainer = document.getElementById('grammar-options-container');
+        const grammarCheckButton = document.getElementById('grammar-check-button');
+        const grammarFeedbackArea = document.getElementById('grammar-feedback-area');
+        const grammarFeedbackMessage = document.getElementById('grammar-feedback-message');
+        const grammarQuestionCounter = document.getElementById('grammar-question-counter');
+        let selectedGrammarAnswer = null;
+
+
+        /**
+         * ----------------------------------------
+         * 1. DATOS Y DEFINICIONES (Tiempos Verbales y Textos)
+         * (Se mantiene la data existente)
+         * ----------------------------------------
+         */
+        
+        const TENSES = {
+            PPS: "Pretérito Perfecto Simple",
+            PI: "Pretérito Imperfecto",
+            PPP: "Pretérito Pluscuamperfecto",
+            CS: "Condicional Simple"
+        };
+        
+        const TENSE_QUESTIONS = [
+            // Pretérito Perfecto Simple (PPS)
+            { verb: "hablar", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: TENSES.PPS, fragment: "Ayer, vos (______) con tu mamá por teléfono.", answer: "hablaste" },
+            { verb: "comer", subject: "él", person: "3ª Persona", grammatical_number: "Singular", tense: TENSES.PPS, fragment: "Mi perro (______) toda su comida rápidamente.", answer: "comió" },
+            { verb: "vivir", subject: "nosotros", person: "1ª Persona", grammatical_number: "Plural", tense: TENSES.PPS, fragment: "El año pasado, nosotros (______) en Bariloche por un mes.", answer: "vivimos" },
+            { verb: "ser", subject: "ustedes", person: "3ª Persona", grammatical_number: "Plural", tense: TENSES.PPS, fragment: "Ustedes (______) muy amables con los turistas.", answer: "fueron" },
+            { verb: "estar", subject: "yo", person: "1ª Persona", grammatical_number: "Singular", tense: TENSES.PPS, fragment: "Cuando lo vi, yo (______) muy cerca de la salida.", answer: "estuve" },
+            // Pretérito Imperfecto (PI)
+            { verb: "jugar", subject: "yo", person: "1ª Persona", grammatical_number: "Singular", tense: TENSES.PI, fragment: "De chico, yo (______) al fútbol en la calle.", answer: "jugaba" },
+            { verb: "tener", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: TENSES.PI, fragment: "Cuando te conocí, vos (______) mucho miedo.", answer: "tenías" },
+            { verb: "ir", subject: "ellos", person: "3ª Persona", grammatical_number: "Plural", tense: TENSES.PI, fragment: "Ellos siempre (______) a ese restaurante los domingos.", answer: "iban" },
+            { verb: "saber", subject: "la gente", person: "3ª Persona", grammatical_number: "Singular", tense: TENSES.PI, fragment: "Nadie (______) la verdad de lo que pasaba.", answer: "sabía" },
+            // Pretérito Pluscuamperfecto (PPP) - Simulado con Haber + participio
+            { verb: "llegar", subject: "ella", person: "3ª Persona", grammatical_number: "Singular", tense: TENSES.PPP, fragment: "Cuando llegué, ella ya (______) (______) a la fiesta.", answer: "había llegado" },
+            { verb: "decir", subject: "nosotros", person: "1ª Persona", grammatical_number: "Plural", tense: TENSES.PPP, fragment: "Al final, nosotros (______) (______) que sí.", answer: "habíamos dicho" },
+            { verb: "volver", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: TENSES.PPP, fragment: "Antes de la reunión, vos ya (______) (______) de tu viaje.", answer: "habías vuelto" },
+             { verb: "terminar", subject: "yo", person: "1ª Persona", grammatical_number: "Singular", tense: TENSES.PPP, fragment: "Al mediodía, yo ya (______) (______) todo el trabajo.", answer: "había terminado" },
+            // Condicional Simple (CS)
+            { verb: "hacer", subject: "yo", person: "1ª Persona", grammatical_number: "Singular", tense: TENSES.CS, fragment: "Si tuviera tiempo, yo (______) más ejercicio.", answer: "haría" },
+            { verb: "vivir", subject: "vos", person: "2ª Persona", grammatical_number: "Singular", tense: TENSES.CS, fragment: "Vos (______) mejor en un lugar con playa.", answer: "vivirías" },
+            { verb: "valer", subject: "el pasaje", person: "3ª Persona", grammatical_number: "Singular", tense: TENSES.CS, fragment: "El pasaje (______) muy caro si viajáramos en primera.", answer: "valdría" },
+            { verb: "decir", subject: "ellos", person: "3ª Persona", grammatical_number: "Plural", tense: TENSES.CS, fragment: "Ellos (______) la verdad, si les preguntaras.", answer: "dirían" },
+        ].sort(() => Math.random() - 0.5); // Barajar preguntas de forma inicial
+
+        const TENSE_HINTS = {
+            [TENSES.PPS]: {
+                explanation: "Se usa para acciones que comenzaron y terminaron completamente en el pasado. Es un hecho puntual.",
+                example: "Ayer **comí** pizza (Verbo: comer, yo)."
+            },
+            [TENSES.PI]: {
+                explanation: "Se usa para describir acciones habituales, repetidas, o estados en el pasado (como una 'foto' de un momento pasado).",
+                example: "De chico, **jugaba** mucho al fútbol (Verbo: jugar, yo)."
+            },
+            [TENSES.PPP]: {
+                explanation: "Expresa una acción pasada que ocurrió *antes* de otra acción también pasada. Se forma con el imperfecto de 'haber' (había, habías, habíamos...) + el participio del verbo principal (comido, salido, vuelto).",
+                example: "Cuando llegué, ella ya **había salido** (Verbo: salir, ella)."
+            },
+            [TENSES.CS]: {
+                explanation: "Se usa para expresar deseos, sugerencias, o acciones hipotéticas (si se cumpliera una condición). Se forma con el infinitivo + terminaciones (-ía, -ías, -íamos...).",
+                example: "Yo **comería** ese postre si no estuviera a dieta (Verbo: comer, yo)."
+            }
+        };
+
+        const TEXT_TYPES = {
+            AUTHOR_STORY: "Cuento de Autor (Ficcional)",
+            FOLK_TALE: "Cuento Popular (Ficcional)",
+            NOVEL: "Novela (Ficcional)",
+            POETRY: "Poesía (Lírico Ficcional)",
+            COMIC: "Historieta / Cómic (Ficcional)",
+            PLAY: "Texto Teatral (Guion Ficcional)",
+            LEGEND: "Leyenda (Ficcional)",
+            MYTH: "Mito (Ficcional)",
+            NEWS: "Noticia (Informativo)",
+            INTERVIEW: "Entrevista (Informativo)",
+            ADVERTISEMENT: "Publicidad (Persuasivo)",
+            PROPAGANDA: "Propaganda (Persuasivo)",
+            SCIENTIFIC: "Artículo Científico (Divulgación)",
+            NORMATIVE: "Texto Normativo (Reglamento)",
+            RECIPE: "Texto Instructivo (Receta)",
+            READER_LETTER: "Carta de Lector (Opinión)",
+            SEARCH_RESULT: "Búsqueda de Internet (Informativo)",
+            SMS: "Mensaje de Texto (Comunicación)",
+            EMAIL: "Correo Electrónico (Comunicación)",
+        };
+
+        // El fragmento de la historieta debe ir en HTML puro para simular los paneles.
+        const COMIC_FRAGMENT_HTML = `
+            <div class="comic-panel">
+                <span class="dialogue">Viñeta 1 (Juan):</span> ¡No encuentro mis lentes! 👓
+            </div>
+            <div class="comic-panel">
+                <span class="sfx">Viñeta 2: ¡CRASH!</span> 💥 (Una caja cae.)
+            </div>
+            <div class="comic-panel">
+                <span class="thought">Viñeta 3 (Juan):</span> (💭 Creo que los tenía puestos todo el tiempo...)
+            </div>
+        `;
+
+
+        const TEXT_QUESTIONS = [
+            // Ficcionales
+            { fragment: "Una vez, en un pueblo pequeño, un niño llamado Martín encontró una llave oxidada en el fondo de un viejo pozo. La llave no abría ninguna puerta conocida, pero al tocarla, los colores del cielo se volvían más intensos...", answer: TEXT_TYPES.AUTHOR_STORY, options: [TEXT_TYPES.AUTHOR_STORY, TEXT_TYPES.SCIENTIFIC, TEXT_TYPES.ADVERTISEMENT, TEXT_TYPES.POETRY] },
+            { fragment: "El lobo sopló y sopló, pero la casa de ladrillos no se cayó. El cerdito, sabiendo que estaba a salvo, se burló. Entonces el lobo tuvo una idea: bajar por la chimenea. El cerdito preparó la olla...", answer: TEXT_TYPES.FOLK_TALE, options: [TEXT_TYPES.FOLK_TALE, TEXT_TYPES.AUTHOR_STORY, TEXT_TYPES.LEGEND, TEXT_TYPES.NEWS] },
+            { fragment: "Fueron tres años de viaje. El capitán Ahab seguía obsesionado con la ballena blanca, Moby Dick. Su pierna de marfil golpeaba la cubierta con furia cada vez que el horizonte se mostraba vacío. Esto no era una simple cacería, era una venganza...", answer: TEXT_TYPES.NOVEL, options: [TEXT_TYPES.NOVEL, TEXT_TYPES.AUTHOR_STORY, TEXT_TYPES.LEGEND, TEXT_TYPES.NEWS] },
+            { fragment: "Azul, el color de la espera, / en las manos de la brisa, / lleva el tiempo, que no pesa, / hacia el mar, sin ninguna prisa.", answer: TEXT_TYPES.POETRY, options: [TEXT_TYPES.POETRY, TEXT_TYPES.NOVEL, TEXT_TYPES.NEWS, TEXT_TYPES.PLAY] },
+            { fragment: COMIC_FRAGMENT_HTML, answer: TEXT_TYPES.COMIC, options: [TEXT_TYPES.COMIC, TEXT_TYPES.PLAY, TEXT_TYPES.SMS, TEXT_TYPES.AUTHOR_STORY], isHtml: true },
+            { fragment: "ACTO I. ESCENA ÚNICA. (Oscuro. Un foco ilumina a ANA, sentada en una silla vieja. Llega PEDRO.) PEDRO: (Con voz baja) ¿Ya estás lista para irnos? ANA: (Suspira) Dame un minuto más. No sé si puedo dejar esto...", answer: TEXT_TYPES.PLAY, options: [TEXT_TYPES.PLAY, TEXT_TYPES.NOVEL, TEXT_TYPES.EMAIL, TEXT_TYPES.NEWS] },
+            { fragment: "Leyenda del Ombú: Cuentan los viejos de la zona que bajo este inmenso árbol vivía el espíritu de un cacique que fue traicionado. Su alma quedó atrapada para proteger a su pueblo. Por eso, tocar el ombú trae mala suerte.", answer: TEXT_TYPES.LEGEND, options: [TEXT_TYPES.LEGEND, TEXT_TYPES.MYTH, TEXT_TYPES.FOLK_TALE, TEXT_TYPES.NOVEL] },
+            { fragment: "La Teogonía de los Dioses: Al principio solo existía el Caos. De él surgieron Gea, la Tierra, y Urano, el Cielo Estrellado. Estos se unieron y dieron nacimiento a los Titanes, que eran seres gigantes y poderosos...", answer: TEXT_TYPES.MYTH, options: [TEXT_TYPES.MYTH, TEXT_TYPES.LEGEND, TEXT_TYPES.SCIENTIFIC, TEXT_TYPES.FOLK_TALE] },
+            
+            // No Ficcionales
+            { fragment: "Buenos Aires, 15 de noviembre de 2025. La Administración Nacional de Parques ha alertado sobre la inusual actividad del Volcán Lanín. Las autoridades han evacuado preventivamente la zona sur de Junín de los Andes...", answer: TEXT_TYPES.NEWS, options: [TEXT_TYPES.NEWS, TEXT_TYPES.MYTH, TEXT_TYPES.AUTHOR_STORY, TEXT_TYPES.ADVERTISEMENT] },
+            { fragment: "—Señora Gómez, ¿qué opina de la nueva ley de tránsito? —Creo que es necesaria, pero la implementación ha sido caótica. —Entiendo. ¿Y cuál es su mayor queja? —La falta de señalización, sin duda.", answer: TEXT_TYPES.INTERVIEW, options: [TEXT_TYPES.INTERVIEW, TEXT_TYPES.NEWS, TEXT_TYPES.PLAY, TEXT_TYPES.READER_LETTER] },
+            { fragment: "Nueva Fórmula Mejorada: ¿Cansado del brillo en tu piel? Nuestro Serum Anti-Grasa reduce la oleosidad en un 80% desde la primera aplicación. ¡Probá la diferencia! Disponible en farmacias.", answer: TEXT_TYPES.ADVERTISEMENT, options: [TEXT_TYPES.ADVERTISEMENT, TEXT_TYPES.PROPAGANDA, TEXT_TYPES.RECIPE, TEXT_TYPES.SCIENTIFIC] },
+            { fragment: "Hacer ejercicio es un deber cívico. Un pueblo fuerte es un pueblo invencible. ¡Apoyá la campaña de bienestar nacional y sé parte del cambio por una nación más saludable!", answer: TEXT_TYPES.PROPAGANDA, options: [TEXT_TYPES.PROPAGANDA, TEXT_TYPES.ADVERTISEMENT, TEXT_TYPES.NORMATIVE, TEXT_TYPES.MYTH] },
+            { fragment: "Abstract: The relationship between the concentration of atmospheric carbon dioxide (CO2) and the mean global temperature was analyzed using regression models on data collected over the last century. Results confirm a statistically significant positive correlation...", answer: TEXT_TYPES.SCIENTIFIC, options: [TEXT_TYPES.SCIENTIFIC, TEXT_TYPES.NEWS, TEXT_TYPES.AUTHOR_STORY, TEXT_TYPES.EMAIL] },
+            { fragment: "RESOLUCIÓN 24/2025. Artículo 1: Los estudiantes deben mantener la limpieza del aula. Artículo 2: El uso de dispositivos móviles está prohibido durante la jornada escolar. La violación del artículo 2 conlleva sanción.", answer: TEXT_TYPES.NORMATIVE, options: [TEXT_TYPES.NORMATIVE, TEXT_TYPES.RECIPE, TEXT_TYPES.PLAY, TEXT_TYPES.SCIENTIFIC] },
+            { fragment: "Ingredientes: 3 huevos, 250g de harina, 100ml de leche. Preparación: Batir los huevos hasta que estén espumosos. Agregar la harina tamizada de a poco...", answer: TEXT_TYPES.RECIPE, options: [TEXT_TYPES.RECIPE, TEXT_TYPES.NORMATIVE, TEXT_TYPES.NEWS, TEXT_TYPES.SMS] },
+            { fragment: "Para El Editor: Escribo para expresar mi profunda indignación por el artículo publicado ayer sobre la corrupción municipal. Me parece que se omitieron detalles cruciales y solicito una rectificación inmediata.", answer: TEXT_TYPES.READER_LETTER, options: [TEXT_TYPES.READER_LETTER, TEXT_TYPES.NEWS, TEXT_TYPES.EMAIL, TEXT_TYPES.SMS] },
+            { fragment: "Google.com\nResultados para: cómo funciona el motor de vapor\n1. El motor de vapor: Principio y Funcionamiento | Historia de la tecnología. (Sitio web)\n2. [VIDEO] Explicación animada de la termodinámica del vapor. (Youtube)", answer: TEXT_TYPES.SEARCH_RESULT, options: [TEXT_TYPES.SEARCH_RESULT, TEXT_TYPES.NEWS, TEXT_TYPES.SCIENTIFIC, TEXT_TYPES.EMAIL] },
+            { fragment: "A: ¿Llegás tarde? (14:35)\nB: Sí, 5 min. ¿Me comprás algo de tomar? (14:36)\nA: Dale. Te espero en la puerta. (14:37)", answer: TEXT_TYPES.SMS, options: [TEXT_TYPES.SMS, TEXT_TYPES.EMAIL, TEXT_TYPES.INTERVIEW, TEXT_TYPES.PLAY] },
+            { fragment: "De: gerencia@empresax.com.ar\nPara: juan.perez@dominio.com\nAsunto: Reunión de Presupuesto\nEstimado Juan: Por la presente, le confirmo la reunión para el día miércoles a las 10:00 AM en la sala principal. Por favor, traiga los informes solicitados. Saludos cordiales.", answer: TEXT_TYPES.EMAIL, options: [TEXT_TYPES.EMAIL, TEXT_TYPES.NEWS, TEXT_TYPES.RECIPE, TEXT_TYPES.PLAY] },
+        ];
+
+
+        /**
+         * ----------------------------------------
+         * 2. NUEVA DATA: GRAMÁTICA Y PUNTUACIÓN (ACTUALIZADA)
+         * ----------------------------------------
+         */
+        const GRAMMAR_CONCEPTS = {
+            ORACION: "Oración",
+            PARRAFO: "Párrafo",
+            PUNTUACION: "Signos de Puntuación",
+            P_SEGUIDO: "Punto y Seguido",
+            P_APARTE: "Punto y Aparte",
+            P_FINAL: "Punto Final",
+            P_IDENTIFICACION: "Identificación de Puntos", // Nuevo
+            CONTEO_PARRAFOS: "Conteo de Párrafos" // Nuevo
+        };
+
+        const PARAGRAPH_TEXT_1 = `La energía solar es una fuente de energía renovable que utiliza la radiación del sol para generar electricidad o calor. Es una de las tecnologías más prometedoras para combatir el cambio climático.
+\n\nSin embargo, la inversión inicial en paneles solares puede ser alta para muchos hogares. Además, su eficiencia depende de las condiciones geográficas y climáticas del lugar donde se instalen.`;
+
+        const PARAGRAPH_TEXT_2 = `El calentamiento global está causando el derretimiento de los glaciares en las zonas polares y en las montañas de alta altitud. Este fenómeno tiene un impacto directo en el aumento del nivel del mar.
+\n\nPor otro lado, el derretimiento afecta los ecosistemas locales, poniendo en peligro la flora y la fauna que dependen del hielo.
+\n\nLa comunidad científica internacional insiste en que reducir las emisiones de gases de efecto invernadero es crucial. Sin una acción coordinada, las consecuencias podrían ser irreversibles para 2050.`;
+
+
+        const GRAMMAR_QUESTIONS = [
+            // Puntuación: Coma
+            { concept: GRAMMAR_CONCEPTS.PUNTUACION, question: "En la frase: 'El perro__ el gato__ y el pájaro duermen', ¿qué signo de puntuación falta en los espacios vacíos para separar elementos de una enumeración?", answer: "Coma", options: ["Punto y Coma", "Coma", "Dos Puntos", "Punto y Seguido"] },
+            
+            // Puntuación: Dos Puntos
+            { concept: GRAMMAR_CONCEPTS.PUNTUACION, question: "Necesito comprar varias cosas__ pan, leche, queso y fruta. ¿Qué signo se usa antes de la enumeración?", answer: "Dos Puntos", options: ["Punto Final", "Punto y Seguido", "Coma", "Dos Puntos"] },
+
+            // Oración: Identificación
+            { concept: GRAMMAR_CONCEPTS.ORACION, question: "De las siguientes opciones, ¿cuál es una oración completa (tiene sujeto y predicado)?", answer: "El sol brilla hoy con fuerza.", options: ["En el parque grande y verde.", "Muy rápido y sin mirar.", "El sol brilla hoy con fuerza.", "Si mañana llueve."]},
+            
+            // Párrafo: Función
+            { concept: GRAMMAR_CONCEPTS.PARRAFO, question: "¿Qué función cumple el primer párrafo de un texto informativo?", answer: "Introducir el tema principal y el enfoque del texto.", options: ["Desarrollar argumentos secundarios.", "Resumir las ideas del texto.", "Introducir el tema principal y el enfoque del texto.", "Concluir el argumento."]},
+            
+            // Punto Seguido: Colocación
+            { concept: GRAMMAR_CONCEPTS.P_SEGUIDO, question: "Si quiero continuar con una idea relacionada en la misma línea, ¿qué tipo de punto debo usar?", answer: "Punto y Seguido", options: ["Punto y Aparte", "Punto Final", "Punto y Seguido", "Coma"]},
+            
+            // Punto Aparte: Colocación / Párrafo
+            { concept: GRAMMAR_CONCEPTS.P_APARTE, question: "Acabas de terminar de explicar la causa de un problema y vas a empezar a detallar las soluciones. ¿Qué tipo de punto usas para hacer la separación?", answer: "Punto y Aparte", options: ["Punto y Seguido", "Punto y Aparte", "Punto Final", "Coma"]},
+            
+            // Punto Final: Definición
+            { concept: GRAMMAR_CONCEPTS.P_FINAL, question: "¿Cuál es el propósito del Punto Final?", answer: "Indicar el fin completo del texto.", options: ["Separar oraciones dentro de un párrafo.", "Separar párrafos con distinta idea.", "Indicar el fin completo del texto.", "Separar elementos en una lista."]},
+            
+            // Oración: Estructura
+            { concept: GRAMMAR_CONCEPTS.ORACION, question: "¿Qué dos elementos gramaticales mínimos necesita una oración para ser completa?", answer: "Sujeto y Predicado.", options: ["Sustantivo y Adjetivo.", "Coma y Punto.", "Sujeto y Predicado.", "Conector y Verbo."]},
+            
+            // Párrafo: Características
+            { concept: GRAMMAR_CONCEPTS.PARRAFO, question: "¿Cuál es la característica principal de un párrafo bien construido?", answer: "Desarrollar una única idea central.", options: ["Incluir solo una oración.", "Desarrollar una única idea central.", "Siempre tener más de diez líneas.", "Ser una lista de ideas sin conexión."]},
+                       
+            // --- NUEVAS PREGUNTAS SOLICITADAS ---
+            
+            // 1. Identificación de Punto (Seguido)
+            { 
+                concept: GRAMMAR_CONCEPTS.P_IDENTIFICACION, 
+                question: `Identificá el signo de puntuación en rojo: "El tren llegó a las diez<span class="text-red-600 font-extrabold text-2xl">.</span> Luego, todos bajaron a la plataforma."`, 
+                answer: "Punto y Seguido", 
+                options: ["Punto Final", "Punto y Aparte", "Punto y Seguido", "Coma"] 
+            },
+            
+            // 2. Identificación de Punto (Aparte)
+            { 
+                concept: GRAMMAR_CONCEPTS.P_IDENTIFICACION, 
+                question: `Identificá el signo de puntuación en rojo:\n\n${PARAGRAPH_TEXT_1.replace('Es una de las tecnologías', '<span class="text-red-600 font-extrabold text-2xl">.</span>\n\nSin embargo, la inversión inicial en paneles solares puede ser alta para muchos hogares.')}`, 
+                answer: "Punto y Aparte", 
+                options: ["Punto y Coma", "Punto y Seguido", "Punto y Aparte", "Dos Puntos"] 
+            },
+
+            // 3. Conteo de Párrafos (2 Párrafos)
+            { 
+                concept: GRAMMAR_CONCEPTS.CONTEO_PARRAFOS, 
+                question: `¿Cuántos párrafos tiene el siguiente texto?\n\n${PARAGRAPH_TEXT_1}`, 
+                answer: "2 Párrafos", 
+                options: ["1 Párrafo", "2 Párrafos", "3 Párrafos", "4 Párrafos"] 
+            },
+            
+            // 4. Conteo de Párrafos (3 Párrafos)
+            { 
+                concept: GRAMMAR_CONCEPTS.CONTEO_PARRAFOS, 
+                question: `¿Cuántos párrafos tiene el siguiente texto?\n\n${PARAGRAPH_TEXT_2}`, 
+                answer: "3 Párrafos", 
+                options: ["1 Párrafo", "2 Párrafos", "3 Párrafos", "4 Párrafos"] 
+            },
+
+        ].sort(() => Math.random() - 0.5); // Barajar preguntas de forma inicial
+
+
+        /**
+         * ----------------------------------------
+         * 3. LÓGICA DE NAVEGACIÓN DE PANTALLAS
+         * ----------------------------------------
+         */
+
+        function hideAllScreens() {
+            mainMenu.classList.add('hidden');
+            tenseSelectScreen.classList.add('hidden');
+            tensesGameScreen.classList.add('hidden');
+            textsGameScreen.classList.add('hidden');
+            grammarGameScreen.classList.add('hidden'); 
+            gameHeader.classList.add('hidden');
+            gameOverMessage.classList.add('hidden');
+        }
+
+        function showMainMenu() {
+            hideAllScreens();
+            mainMenu.classList.remove('hidden');
+        }
+
+        function startGameMode(mode) {
+            currentGameMode = mode;
+            if (mode === 'tenses') {
+                showTenseSelection();
+            } else if (mode === 'texts') {
+                initializeTextGame();
+            } else if (mode === 'grammar') {
+                initializeGrammarGame();
+            }
+        }
+
+        function showTenseSelection() {
+            hideAllScreens();
+            tenseSelectScreen.classList.remove('hidden');
+        }
+
+        function endGame() {
+            hideAllScreens();
+            // currentQuestions.length será el límite real del juego (16 o 10)
+            const maxQuestions = currentGameMode === 'tenses' ? TENSE_GAME_LIMIT : 
+                                 currentGameMode === 'texts' ? TEXT_GAME_LIMIT : 
+                                 GRAMMAR_GAME_LIMIT;
+                                 
+            finalScoreElement.textContent = `${score} de ${maxQuestions}`;
+            gameOverMessage.classList.remove('hidden');
+
+            // Lógica de felicitación por puntaje perfecto
+            if (score === maxQuestions && maxQuestions > 0) {
+                perfectScoreTrophy.classList.remove('hidden');
+                perfectScoreTrophy.querySelector('p').classList.add('animate-bounce');
+            } else {
+                perfectScoreTrophy.classList.add('hidden');
+                perfectScoreTrophy.querySelector('p').classList.remove('animate-bounce');
+            }
+        }
+
+
+        /**
+         * ----------------------------------------
+         * 4. LÓGICA DEL JUEGO DE TIEMPOS VERBALES
+         * ----------------------------------------
+         */
+
+        function startTenseGame(mode) {
+            hideAllScreens();
+            tensesGameScreen.classList.remove('hidden');
+            gameHeader.classList.remove('hidden');
+            gameTitleElement.textContent = '🇦🇷 Práctica Verbal';
+
+            if (mode === 'all') {
+                selectedTenses = [TENSES.PPS, TENSES.PI, TENSES.PPP, TENSES.CS];
+            } else if (mode === 'preterites') {
+                selectedTenses = [TENSES.PPS, TENSES.PI, TENSES.PPP];
+            } else if (mode === 'conditional') {
+                selectedTenses = [TENSES.CS];
+            }
+
+            // Filtra, mezcla y limita las preguntas
+            currentQuestions = TENSE_QUESTIONS
+                .filter(q => selectedTenses.includes(q.tense))
+                .sort(() => Math.random() - 0.5)
+                .slice(0, TENSE_GAME_LIMIT);
+
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScore();
+            
+            // Ocultar feedback/game over
+            tenseFeedbackArea.classList.add('hidden');
+            
+            displayTenseQuestion();
+        }
+        
+        function displayTenseQuestion() {
+            // Actualizar contador
+            tenseQuestionCounter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${currentQuestions.length}`;
+            
+            if (currentQuestionIndex >= currentQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const current = currentQuestions[currentQuestionIndex];
+            
+            tenseAnswerInput.value = '';
+            tenseAnswerInput.disabled = false;
+            tenseCheckButton.disabled = false;
+            tenseFeedbackArea.classList.add('hidden');
+            
+            requiredTenseElement.textContent = current.tense;
+            requiredPersonElement.textContent = current.person;
+            requiredNumberElement.textContent = current.grammatical_number;
+            
+            // Destaca el verbo para conjugar
+            const fragmentHtml = current.fragment.replace(
+                "______", 
+                `<span class="text-red-500 font-extrabold text-4xl mx-1">( ${current.verb} )</span>`
+            );
+            sentenceFragmentElement.innerHTML = fragmentHtml;
+
+            tenseAnswerInput.focus();
+        }
+
+        function checkTenseAnswer() {
+            const current = currentQuestions[currentQuestionIndex];
+            // Manejar caso de Pluscuamperfecto (dos palabras)
+            const inputParts = tenseAnswerInput.value.trim().toLowerCase().split(/\s+/);
+            const userAnswers = current.tense === TENSES.PPP ? [inputParts[0] || '', inputParts.slice(1).join(' ') || ''] : [inputParts.join(' ')];
+            
+            const correctAnswer = current.answer.trim().toLowerCase();
+            const userAnswer = userAnswers.join(' ').trim().toLowerCase(); // Asegurar la normalización
+
+            tenseAnswerInput.disabled = true;
+            tenseCheckButton.disabled = true;
+
+            tenseFeedbackArea.classList.remove('hidden');
+            tenseFeedbackMessage.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            const grammarDetail = `${current.person} (${current.subject}), ${current.grammatical_number} del verbo "${current.verb}".`;
+            
+            if (userAnswer === correctAnswer.toLowerCase()) {
+                score++;
+                tenseFeedbackMessage.classList.add('feedback-correct');
+                tenseFeedbackMessage.innerHTML = `¡Correcto! ✔️<br/> La conjugación es **${current.answer}**.<br/> *Detalle: ${grammarDetail}*`;
+            } else {
+                tenseFeedbackMessage.classList.add('feedback-incorrect');
+                tenseFeedbackMessage.innerHTML = `Incorrecto. ❌<br/> Intentaste: *${userAnswer}*.<br/> La conjugación correcta era: **${current.answer}**.<br/> *Detalle: ${grammarDetail}*`;
+            }
+
+            updateScore();
+        }
+
+        function nextTenseQuestion() {
+            currentQuestionIndex++;
+            displayTenseQuestion();
+        }
+
+        function showHint() {
+            const current = currentQuestions[currentQuestionIndex];
+            const hint = TENSE_HINTS[current.tense];
+
+            if (hint) {
+                hintTitle.textContent = `Pista: ${current.tense}`;
+                hintExplanation.textContent = hint.explanation;
+                hintExample.textContent = hint.example;
+                hintModal.classList.remove('hidden');
+            }
+        }
+
+        function closeHintModal() {
+            hintModal.classList.add('hidden');
+        }
+
+        // Manejo de la tecla Enter para Tiempos Verbales
+        tenseAnswerInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !tenseCheckButton.disabled) {
+                checkTenseAnswer();
+            } else if (e.key === 'Enter' && !tenseFeedbackArea.classList.contains('hidden')) {
+                nextTenseQuestion();
+            }
+        });
+
+
+        /**
+         * ----------------------------------------
+         * 5. LÓGICA DEL JUEGO DE TIPOS DE TEXTO
+         * ----------------------------------------
+         */
+
+        function initializeTextGame() {
+            hideAllScreens();
+            textsGameScreen.classList.remove('hidden');
+            gameHeader.classList.remove('hidden');
+            gameTitleElement.textContent = '📚 Tipos de Texto';
+            currentGameMode = 'texts';
+            
+            // Mezcla y limita las preguntas
+            currentQuestions = [...TEXT_QUESTIONS]
+                .sort(() => Math.random() - 0.5)
+                .slice(0, TEXT_GAME_LIMIT);
+
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScore();
+            
+            textFeedbackArea.classList.add('hidden');
+            displayTextQuestion();
+        }
+
+        function displayTextQuestion() {
+            // Actualizar contador
+            textQuestionCounter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${currentQuestions.length}`;
+
+            if (currentQuestionIndex >= currentQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const current = currentQuestions[currentQuestionIndex];
+            
+            // Reset state
+            textCheckButton.disabled = true;
+            textFeedbackArea.classList.add('hidden');
+            selectedTextAnswer = null;
+            textOptionsContainer.innerHTML = '';
+            
+            // Determinar si el fragmento es HTML (Historieta) o texto plano
+            if (current.isHtml) {
+                textFragmentWrapper.innerHTML = current.fragment;
+                textFragmentWrapper.classList.remove('italic', 'text-gray-800');
+                textFragmentWrapper.classList.add('bg-white', 'p-2', 'border');
+            } else {
+                textFragmentWrapper.innerHTML = `<p id="text-fragment" class="text-xl italic text-gray-800 leading-relaxed">${current.fragment}</p>`;
+                textFragmentWrapper.classList.add('italic', 'text-gray-800');
+                textFragmentWrapper.classList.remove('bg-white', 'p-2', 'border');
+            }
+
+            // Display options
+            const options = [...current.options].sort(() => Math.random() - 0.5); // Mezclar opciones
+
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'option-button bg-gray-200 text-gray-800 hover:bg-gray-300';
+                button.setAttribute('data-answer', option);
+                button.onclick = () => selectTextOption(button);
+                textOptionsContainer.appendChild(button);
+            });
+        }
+
+        function selectTextOption(selectedButton) {
+            // Deseleccionar todos
+            document.querySelectorAll('#text-options-container button').forEach(btn => {
+                btn.classList.remove('selected-answer', 'bg-cyan-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-800');
+            });
+
+            // Seleccionar el botón clicado
+            selectedButton.classList.add('selected-answer', 'bg-cyan-500', 'text-white');
+            selectedButton.classList.remove('bg-gray-200', 'text-gray-800');
+            
+            selectedTextAnswer = selectedButton.getAttribute('data-answer');
+            textCheckButton.disabled = false;
+        }
+        
+        function checkTextAnswer() {
+            if (!selectedTextAnswer) return;
+
+            const current = currentQuestions[currentQuestionIndex];
+            const correctAnswer = current.answer;
+            
+            // Deshabilitar botones
+            document.querySelectorAll('#text-options-container button').forEach(btn => {
+                btn.disabled = true;
+            });
+            textCheckButton.disabled = true;
+            
+            textFeedbackArea.classList.remove('hidden');
+            textFeedbackMessage.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            if (selectedTextAnswer === correctAnswer) {
+                score++;
+                textFeedbackMessage.classList.add('feedback-correct');
+                textFeedbackMessage.innerHTML = `¡Correcto! ✔️ El texto es un **${correctAnswer}**.`;
+                // Resaltar la respuesta correcta
+                document.querySelector(`[data-answer="${correctAnswer}"]`).classList.add('bg-green-500', 'text-white', 'border-green-700');
+            } else {
+                textFeedbackMessage.classList.add('feedback-incorrect');
+                textFeedbackMessage.innerHTML = `Incorrecto. ❌ Seleccionaste: *${selectedTextAnswer}*.<br/> El tipo correcto era: **${correctAnswer}**.`;
+                // Resaltar la seleccionada como incorrecta y la correcta
+                const selectedEl = document.querySelector(`[data-answer="${selectedTextAnswer}"]`);
+                if (selectedEl) selectedEl.classList.add('bg-red-500', 'text-white', 'border-red-700');
+                const correctEl = document.querySelector(`[data-answer="${correctAnswer}"]`);
+                if (correctEl) correctEl.classList.add('bg-green-500', 'text-white', 'border-green-700');
+            }
+
+            updateScore();
+        }
+
+        function nextTextQuestion() {
+            currentQuestionIndex++;
+            displayTextQuestion();
+        }
+
+
+        /**
+         * ----------------------------------------
+         * 6. LÓGICA DEL NUEVO JUEGO: GRAMÁTICA Y PUNTUACIÓN
+         * ----------------------------------------
+         */
+
+        function initializeGrammarGame() {
+            hideAllScreens();
+            grammarGameScreen.classList.remove('hidden');
+            gameHeader.classList.remove('hidden');
+            gameTitleElement.textContent = '📐 Estructura y Puntuación';
+            currentGameMode = 'grammar';
+            
+            // Mezcla y limita las preguntas
+            currentQuestions = [...GRAMMAR_QUESTIONS]
+                .sort(() => Math.random() - 0.5)
+                .slice(0, GRAMMAR_GAME_LIMIT);
+
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScore();
+            
+            grammarFeedbackArea.classList.add('hidden');
+            displayGrammarQuestion();
+        }
+
+        function displayGrammarQuestion() {
+            // Actualizar contador
+            grammarQuestionCounter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${currentQuestions.length}`;
+
+            if (currentQuestionIndex >= currentQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const current = currentQuestions[currentQuestionIndex];
+            
+            // Reset state
+            grammarCheckButton.disabled = true;
+            grammarFeedbackArea.classList.add('hidden');
+            selectedGrammarAnswer = null;
+            grammarOptionsContainer.innerHTML = '';
+            
+            requiredConceptElement.textContent = current.concept;
+            // Para las preguntas de identificación de punto, la pregunta contiene el HTML (span rojo)
+            // Para el resto, es texto plano
+            grammarQuestionElement.innerHTML = current.question; 
+
+            // Display options
+            const options = [...current.options].sort(() => Math.random() - 0.5); // Mezclar opciones
+
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'option-button bg-gray-200 text-gray-800 hover:bg-gray-300';
+                // Usamos el texto de la opción para el data-answer
+                button.setAttribute('data-answer', option); 
+                button.onclick = () => selectGrammarOption(button);
+                grammarOptionsContainer.appendChild(button);
+            });
+        }
+
+        function selectGrammarOption(selectedButton) {
+            // Deseleccionar todos
+            document.querySelectorAll('#grammar-options-container button').forEach(btn => {
+                btn.classList.remove('selected-answer', 'bg-orange-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-800');
+            });
+
+            // Seleccionar el botón clicado
+            selectedButton.classList.add('selected-answer', 'bg-orange-500', 'text-white');
+            selectedButton.classList.remove('bg-gray-200', 'text-gray-800');
+            
+            // El selectedGrammarAnswer ahora es el texto de la opción simple
+            selectedGrammarAnswer = selectedButton.getAttribute('data-answer'); 
+            grammarCheckButton.disabled = false;
+        }
+        
+        function checkGrammarAnswer() {
+            if (!selectedGrammarAnswer) return;
+
+            const current = currentQuestions[currentQuestionIndex];
+            const correctAnswer = current.answer;
+            
+            // Deshabilitar botones
+            document.querySelectorAll('#grammar-options-container button').forEach(btn => {
+                btn.disabled = true;
+            });
+            grammarCheckButton.disabled = true;
+            
+            grammarFeedbackArea.classList.remove('hidden');
+            grammarFeedbackMessage.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            if (selectedGrammarAnswer === correctAnswer) {
+                score++;
+                grammarFeedbackMessage.classList.add('feedback-correct');
+                grammarFeedbackMessage.innerHTML = `¡Correcto! ✔️ La opción es **${correctAnswer}**.`;
+                // Resaltar la respuesta correcta usando el data-answer simple
+                document.querySelector(`[data-answer="${correctAnswer}"]`).classList.add('bg-green-500', 'text-white', 'border-green-700');
+            } else {
+                grammarFeedbackMessage.classList.add('feedback-incorrect');
+                grammarFeedbackMessage.innerHTML = `Incorrecto. ❌ Seleccionaste: *${selectedGrammarAnswer}*.<br/> La opción correcta era: **${correctAnswer}**.`;
+                // Resaltar la seleccionada como incorrecta y la correcta
+                const selectedEl = document.querySelector(`[data-answer="${selectedGrammarAnswer}"]`);
+                if (selectedEl) selectedEl.classList.add('bg-red-500', 'text-white', 'border-red-700');
+                const correctEl = document.querySelector(`[data-answer="${correctAnswer}"]`);
+                if (correctEl) correctEl.classList.add('bg-green-500', 'text-white', 'border-green-700');
+            }
+
+            updateScore();
+        }
+
+        function nextGrammarQuestion() {
+            currentQuestionIndex++;
+            displayGrammarQuestion();
+        }
+
+
+        /**
+         * ----------------------------------------
+         * 7. LÓGICA GENERAL
+         * ----------------------------------------
+         */
+        
+        function updateScore() {
+            scoreElement.textContent = score;
+        }
+
+
+        // Inicializa mostrando la pantalla principal al cargar la página
+        window.onload = showMainMenu;
+
+    </script>
+</body>
+</html>
